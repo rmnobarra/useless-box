@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: useless-box
+  labels:
+    app: useless-box
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: useless-box
+  template:
+    metadata:
+      labels:
+        app: useless-box
+    spec:
+      containers:
+      - name: useless-box
+        image: rmnobarra/useless-box:latest
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
