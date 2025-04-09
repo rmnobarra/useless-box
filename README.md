@@ -107,10 +107,3 @@ Remember to:
 - Use GitHub Secrets for DockerHub credentials
 - Keep dependencies updated
 
-## License
-
-[Add your license information here]
-
-## Contact
-
-[Your contact information or how to reach out for support]
