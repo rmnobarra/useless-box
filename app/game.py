@@ -1,47 +1,41 @@
 import time
-from threading import Lock
-from .models import db, PlayerScore
+import redis
+import os
 
 class Game:
     def __init__(self):
-        self.light_on = False
-        self.owner_id = None
-        self.light_on_since = None
-        self.lock = Lock()
+        self.redis = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
     def toggle_light(self, player_id):
-        from flask import current_app
-        with current_app.app_context(), self.lock:
-            now = time.time()
-            if self.light_on:
-                if self.owner_id:
-                    duration = now - self.light_on_since
-                    self._add_score(self.owner_id, duration)
-                self.light_on = False
-                self.owner_id = None
-                self.light_on_since = None
-            else:
-                self.light_on = True
-                self.owner_id = player_id
-                self.light_on_since = now
+        now = time.time()
+        light_on = self.redis.get("light_on") == b"True"
 
-            return self.get_state()
+        if light_on:
+            owner_id = self.redis.get("owner_id").decode()
+            light_on_since = float(self.redis.get("light_on_since"))
+            duration = now - light_on_since
+            self._add_score(owner_id, duration)
+            self.redis.set("light_on", "False")
+            self.redis.delete("owner_id")
+            self.redis.delete("light_on_since")
+        else:
+            self.redis.set("light_on", "True")
+            self.redis.set("owner_id", player_id)
+            self.redis.set("light_on_since", now)
+
+        return self.get_state()
 
     def _add_score(self, player_id, duration):
-        score = PlayerScore.query.get(player_id)
-        if not score:
-            score = PlayerScore(id=player_id, score=0)
-            db.session.add(score)
-        score.score += duration
-        db.session.commit()
+        self.redis.zincrby("scoreboard", duration, player_id)
 
     def get_state(self):
+        owner_id = self.redis.get("owner_id")
         return {
-            "light_on": self.light_on,
-            "owner_id": self.owner_id,
+            "light_on": self.redis.get("light_on") == b"True",
+            "owner_id": owner_id.decode() if owner_id else None,
             "scoreboard": self.get_scoreboard()
         }
 
     def get_scoreboard(self):
-        scores = PlayerScore.query.order_by(PlayerScore.score.desc()).all()
-        return [{"player_id": s.id, "score": round(s.score, 2)} for s in scores]
+        scores = self.redis.zrevrange("scoreboard", 0, -1, withscores=True)
+        return [{"player_id": player.decode(), "score": round(score, 2)} for player, score in scores]
