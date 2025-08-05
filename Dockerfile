@@ -9,4 +9,4 @@ COPY . /app
 
 ENV FLASK_ENV=development
 
-CMD ["python", "run.py"]
+CMD ["gunicorn", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--bind", "0.0.0.0:5000", "wsgi:app"]
