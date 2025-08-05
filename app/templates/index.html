@@ -5,56 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Useless Box - Articulated Lamp</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Useless Box</h1>
-        <div class="lamp-container">
-            <div class="lamp-base">
-                <div class="lamp-arm" id="lampArm1">
-                    <div class="lamp-arm" id="lampArm2">
-                        <div class="lamp-head" id="lampHead">
-                            <div class="light" id="light"></div>
+        <!-- Lado esquerdo: luminária -->
+        <div class="lamp-side">
+            <h1>Useless Box</h1>
+            <div class="lamp-container">
+                <div class="lamp-base">
+                    <div class="lamp-arm" id="lampArm1">
+                        <div class="lamp-arm" id="lampArm2">
+                            <div class="lamp-head" id="lampHead">
+                                <div class="light" id="light"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <button id="toggleButton" onclick="toggleLight()">Toggle Light</button>
         </div>
-        <button id="toggleButton">Toggle Light</button>
+
+        <!-- Lado direito: ranking -->
+        <div class="scoreboard-container">
+            <h2>Ranking</h2>
+            <table id="scoreboard">
+                <thead>
+                    <tr>
+                        <th>Jogador</th>
+                        <th>Tempo (s)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-        const light = document.getElementById('light');
-        const button = document.getElementById('toggleButton');
-        const powerSound = new Audio('data:audio/wav;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRDiMcCBcH3Cc+CDv/7xA4Tvh9Rz/y8QADBwMWgQAZG/ILNAARQ4GLTcDeIIIhxGOBAuD7hOfBB3/94gcJ3w+o5/5eIAIAAAVwWgQAVQ2ORaIQwEMAJiDg95G4nQL7mQVWI6GwRcfsZAcsKkJvxgxEjzFUgfHoSQ9Qq7KNwqHwuB13MA4a1q/DmBrHgPcmjiGoh//EwC5nGPEmS4RcfkVKOhJf+WOgoxJclFz3kgn//dBA+ya1GhurNn8zb//9NNutNuhz31f////9vt///z+IdAEAAAK4LQIAKobHItEIYCGAExBwe8jcToF9zIKrEdDYIuP2MgOWFSE34wYiR5iqQPj0JIeoVdlG4VD4XA67mAcNa1fhzA1jwHuTRxDUQ//iYBczjHiTJcIuPyKlHQkv/LHQUYkuSi57yQT//uggfZNajQ3Vmz+Zt//+mm3Wm3Q576v////+32///5/EOgAAADVghQAAAAA//uQZAUAB1WI0PZugAAAAAoQwAAAEk3nRd2qAAAAACiDgAAAAAAABCqEEQRLCgwpBGMlJkIz8jKhGvj4k6jzRnqasNKIeoh5gI7BJaC1A1AoNBjJgbyApVS4IDlZgDU5WUAxEKDNmmALHzZp0Fkz1FMTmGFl1FMEyodIavcCAUHDWrKAIA4aa2oCgILEBupZgHvAhEBcZ6joQBxS76AgccrFlczBvKLC0QI2cBoCFvfTDAo7eoOQInqDPBtvrDEZBNYN5xwNwxQRfw8ZQ5wQVLvO8OYU+mHvFLlDh05Mdg7BT6YrRPpCBznMB2r//xKJjyyOh+cImr2/4doscwD6neZjuZR4AgAABYAAAABy1xcdQtxYBYYZdifkUDgzzXaXn98Z0oi9ILU5mBjFANmRwlVJ3/6jYDAmxaiDG3/6xjQQCCKkRb/6kg/wW+kSJ5//rLobkLSiKmqP/0ikJuDaSaSf/6JiLYLEYnW/+kXg1WRVJL/9EmQ1YZIsv/6Qzwy5qk7/+tEU0nkls3/zIUMPKNX/6yZLf+kFgAfgGyLFAUwY//uQZAUABcd5UiNPVXAAAApAAAAAE0VZQKw9ISAAACgAAAAAVQIygIElVrFkBS+Jhi+EAuu+lKAkYUEIsmEAEoMeDmCETMvfSHTGkF5RWH7kz/ESHWPAq/kcCRhqBtMdokPdM7vil7RG98A2sc7zO6ZvTdM7pmOUAZTnJW+NXxqmd41dqJ6mLTXxrPpnV8avaIf5SvL7pndPvPpndJR9Kuu8fePvuiuhorgWjp7Mf/PRjxcFCPDkW31srioCExivv9lcwKEaHsf/7ow2Fl1T/9RkXgEhYElAoCLFtMArxwivDJJ+bR1HTKJdlEoTELCIqgEwVGSQ+hIm0NbK8WXcTEI0UPoa2NbG4y2K00JEWbZavJXkYaqo9CRHS55FcZTjKEk3NKoCYUnSQ0rWxrZbFKbKIhOKPZe1cJKzZSaQrIyULHDZmV5K4xySsDRKWOruanGtjLJXFEmwaIbDLX0hIPBUQPVFVkQkDoUNfSoDgQGKPekoxeGzA4DUvnn4bxzcZrtJyipKfPNy5w+9lnXwgqsiyHNeSVpemw4bWb9psYeq//uQZBoABQt4yMVxYAIAAAkQoAAAHvYpL5m6AAgAACXDAAAAD59jblTirQe9upFsmZbpMudy7Lz1X1DYsxOOSWpfPqNX2WqktK0DMvuGwlbNj44TleLPQ+Gsfb+GOWOKJoIrWb3cIMeeON6lz2umTqMXV8Mj30yWPpjoSa9ujK8SyeJP5y5mOW1D6hvLepeveEAEDo0mgCRClOEgANv3B9a6fikgUSu/DmAMATrGx7nng5p5iimPNZsfQLYB2sDLIkzRKZOHGAaUyDcp');
+        const socket = io();
+        const light = document.getElementById("light");
+        const scoreboard = document.querySelector("#scoreboard tbody");
+        const playerId = "{{ player_id }}";
 
-        button.addEventListener('click', () => {
-            powerSound.play();
-            fetch('/toggle', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    updateLight(data.light_on);
-                });
-        });
+        const powerSound = new Audio("data:audio/wav;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRDiMcCBcH3Cc+CDv/7xA4Tvh9Rz/y8QADBwMWgQAZG/ILNAARQ4GLTcDeIIIhxGOBAuD7hOfBB3/94gcJ3w+o5/5eIAIAAAVwWgQAVQ2ORaIQwEMAJiDg95G4nQL7mQVWI6GwRcfsZAcsKkJvxgxEjzFUgfHoSQ9Qq7KNwqHwuB13MA4a1q/DmBrHgPcmjiGoh//EwC5nGPEmS4RcfkVKOhJf+WOgoxJclFz3kgn//dBA+ya1GhurNn8zb//9NNutNuhz31f////9vt///z+IdAEAAAK4LQIAKobHItEIYCGAExBwe8jcToF9zIKrEdDYIuP2MgOWFSE34wYiR5iqQPj0JIeoVdlG4VD4XA67mAcNa1fhzA1jwHuTRxDUQ//iYBczjHiTJcIuPyKlHQkv/LHQUYkuSi57yQT//uggfZNajQ3Vmz+Zt//+mm3Wm3Q576v////+32///5/EOgAAADVghQAAAAA");
+
+        powerSound.load();
+
+        document.body.addEventListener('click', () => {
+            powerSound.play().catch(() => {});
+        }, { once: true });
 
         function updateLight(isOn) {
-            if (isOn) {
-                light.classList.add('on');
-                document.body.classList.add('light-on');
-            } else {
-                light.classList.remove('on');
-                document.body.classList.remove('light-on');
-            }
+            light.classList.toggle("on", isOn);
+            document.body.classList.toggle("light-on", isOn);
         }
 
-        // Polling to update the light status
-        setInterval(() => {
-            fetch('/status')
-                .then(response => response.json())
-                .then(data => {
-                    updateLight(data.light_on);
-                });
-        }, 1000);
+        function toggleLight() {
+            if (powerSound.readyState >= 2) {
+                powerSound.currentTime = 0;
+                powerSound.play().catch((err) => console.error("Erro ao tocar som:", err));
+            }
+            socket.emit("toggle_light");
+        }
+
+        socket.on("connect", () => {
+            console.log("Conectado ao servidor");
+        });
+
+        socket.on("game_state", (data) => {
+            updateLight(data.light_on);
+            renderScoreboard(data.scoreboard);
+        });
+
+        function renderScoreboard(scores) {
+            scoreboard.innerHTML = "";
+            scores.forEach(({ player_id, score }) => {
+                const tr = document.createElement("tr");
+                if (player_id === playerId) tr.classList.add("you");
+                tr.innerHTML = `
+                    <td>${player_id === playerId ? "Você" : player_id.slice(0, 8)}</td>
+                    <td>${score}</td>`;
+                scoreboard.appendChild(tr);
+            });
+        }
     </script>
 </body>
 </html>

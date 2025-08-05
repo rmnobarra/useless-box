@@ -4,10 +4,6 @@ body {
     margin: 0;
     padding: 0;
     color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     transition: background-color 0.5s ease;
 }
 
@@ -16,12 +12,18 @@ body.light-on {
 }
 
 .container {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+    min-height: 100vh;
 }
 
 h1 {
     color: #fff;
-    margin-bottom: 50px;
+    margin-bottom: 20px;
 }
 
 .lamp-container {
@@ -108,4 +110,44 @@ h1 {
 
 #toggleButton:hover {
     background-color: #777;
+}
+
+/* Layout lado a lado em telas maiores */
+@media (min-width: 768px) {
+    .container {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: space-around;
+    }
+
+    .lamp-side, .scoreboard-container {
+        flex: 1;
+        max-width: 50%;
+    }
+
+    .scoreboard-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+}
+
+/* Ranking */
+.scoreboard-container table {
+    width: 100%;
+    border-collapse: collapse;
+    min-height: 150px;
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+}
+
+.scoreboard-container th, .scoreboard-container td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+}
+
+.scoreboard-container tr.you {
+    background-color: #1e88e5;
+    font-weight: bold;
+    color: white;
 }
