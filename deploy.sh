@@ -76,12 +76,6 @@ helm upgrade --install alertmanager prometheus-community/alertmanager \
   --timeout 5m \
   --wait
 
-#Deploy Grafana
-echo -e "${BLUE}Deploying Grafana...${NC}"
-helm upgrade --install grafana grafana/grafana \
-  --namespace $OBSERVABILITY_NAMESPACE \
-  --values kubernetes/helm-values/grafana-values.yaml
-
 echo -e "${BLUE}Deploying workload...${NC}"
 echo -e "${BLUE}===========================================${NC}"
 echo -e "${BLUE}Creating customers namespaces...${NC}"
@@ -148,7 +142,6 @@ GRAFANA_PASS=$(kubectl get secret --namespace $OBSERVABILITY_NAMESPACE grafana -
 echo -e "${GREEN}Username: $GRAFANA_USER / Password: $GRAFANA_PASS${NC}"
 echo -e "${BLUE}===========================================${NC}"
 echo -e "${GREEN}Available services:${NC}"
-echo -e "${GREEN}Grafana:        http://localhost:3000${NC}"
 echo -e "${GREEN}VictoriaMetrics: http://localhost:8428${NC}"
 echo -e "${GREEN}VMAlert:        http://localhost:8880${NC}"
 echo -e "${GREEN}Alertmanager:   http://localhost:9093${NC}"

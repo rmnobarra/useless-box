@@ -47,89 +47,38 @@ for NS in "${!NS_ERRORS[@]}"; do
       ;;
 
     delete_pvc)
-      echo "🧨 Criando falhas de armazenamento Redis"
+      echo "🧨 Quebrando armazenamento Redis - Impacto direto na aplicação"
 
-      # 1. Primeiro, cria um PVC com StorageClass inexistente para gerar eventos de erro
-      echo "📦 Criando PVC com StorageClass inexistente"
-      cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: broken-redis-storage
-  namespace: $NS
-  labels:
-    app: redis-broken
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 8Gi
-  storageClassName: nonexistent-storage-class
-EOF
-
-      # 2. Força o Redis a usar armazenamento inexistente através de patch
-      echo "⚠️ Alterando Redis para usar PVC inexistente"
-      kubectl -n $NS patch statefulset redis-release-master \
-        --type='json' \
-        -p='[{"op": "replace", "path": "/spec/volumeClaimTemplates/0/spec/storageClassName", "value":"nonexistent-storage-class"}]' \
-        2>/dev/null || true
-
-      # 3. Força restart do StatefulSet para tentar montar o volume quebrado
-      echo "🔄 Forçando restart do Redis StatefulSet"
-      kubectl rollout restart statefulset/redis-release-master -n $NS 2>/dev/null || true
-
-      # 4. Simula corrupção de dados removendo finalizers de PVCs ativos (cria inconsistência)
-      PVC_NAME=$(kubectl get pvc -n $NS -o jsonpath='{.items[?(@.metadata.name contains "redis-release-master")].metadata.name}' 2>/dev/null)
+      # 1. Identifica e deleta o PVC do Redis (vai quebrar o Redis imediatamente)
+      echo "🔍 Identificando PVC do Redis..."
+      REDIS_PVC=$(kubectl get pvc -n $NS -l app.kubernetes.io/name=redis -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
       
-      if [ -n "$PVC_NAME" ]; then
-        echo "� Removendo finalizers do PVC ativo (simula corrupção)"
-        kubectl patch pvc $PVC_NAME -n $NS --type='json' -p='[{"op": "remove", "path": "/metadata/finalizers"}]' 2>/dev/null || true
+      if [ -n "$REDIS_PVC" ]; then
+        echo "💣 DELETANDO PVC DO REDIS: $REDIS_PVC"
+        kubectl delete pvc $REDIS_PVC -n $NS --force --grace-period=0 2>/dev/null || true
+        
+        # 2. Remove o PV associado se existir (garante que não há recovery)
+        REDIS_PV=$(kubectl get pv -o jsonpath="{.items[?(@.spec.claimRef.name=='$REDIS_PVC' && @.spec.claimRef.namespace=='$NS')].metadata.name}" 2>/dev/null)
+        if [ -n "$REDIS_PV" ]; then
+          echo "🔨 Removendo PV associado: $REDIS_PV"
+          kubectl delete pv $REDIS_PV --force --grace-period=0 2>/dev/null || true
+        fi
       fi
 
-      # 5. Cria múltiplos pods tentando usar o mesmo PVC (conflito de montagem)
-      echo "⚔️ Criando conflito de montagem de volume"
-      cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: conflicting-pod-1
-  namespace: $NS
-  labels:
-    app: volume-conflict
-spec:
-  containers:
-  - name: redis
-    image: redis:6.2-alpine
-    volumeMounts:
-    - name: redis-data
-      mountPath: /data
-  volumes:
-  - name: redis-data
-    persistentVolumeClaim:
-      claimName: $PVC_NAME
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: conflicting-pod-2
-  namespace: $NS
-  labels:
-    app: volume-conflict
-spec:
-  containers:
-  - name: redis
-    image: redis:6.2-alpine
-    volumeMounts:
-    - name: redis-data
-      mountPath: /data
-  volumes:
-  - name: redis-data
-    persistentVolumeClaim:
-      claimName: $PVC_NAME
-EOF
+      # 3. Mata todos os pods Redis para forçar restart
+      echo "💀 Matando pods Redis para forçar falha de montagem"
+      kubectl delete pods -n $NS -l app.kubernetes.io/name=redis --force --grace-period=0 2>/dev/null || true
 
-      echo "✅ Falhas de armazenamento criadas - verifique eventos e logs para observabilidade"
+      # 4. Força restart do deployment Redis (vai falhar por falta de PVC)
+      echo "🔄 Forçando restart do Redis deployment"
+      kubectl rollout restart deployment/redis-release -n $NS 2>/dev/null || true
+
+      # 5. Verifica impacto na aplicação useless-box
+      echo "🔍 Forçando restart da aplicação useless-box..."
+      kubectl rollout restart deployment/useless-box -n $NS 2>/dev/null || true
+
+      echo "✅ Redis completamente quebrado - useless-box deve falhar ao conectar"
+      echo "🔍 Para monitorar: kubectl get events -n $NS --sort-by='.lastTimestamp'"
       ;;
 
     affinity_block)

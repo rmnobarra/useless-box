@@ -145,17 +145,6 @@ echo -e "${BLUE}===========================================${NC}"
 echo -e "${GREEN}Forwarding observability services...${NC}"
 echo -e "${BLUE}===========================================${NC}"
 
-# Grafana
-start_port_forward $OBSERVABILITY_NAMESPACE "grafana" 3000 80 "Grafana"
-
-# Get Grafana credentials
-GRAFANA_USER=$(kubectl get secret --namespace $OBSERVABILITY_NAMESPACE grafana -o jsonpath="{.data.admin-user}" | base64 --decode 2>/dev/null)
-GRAFANA_PASS=$(kubectl get secret --namespace $OBSERVABILITY_NAMESPACE grafana -o jsonpath="{.data.admin-password}" | base64 --decode 2>/dev/null)
-
-if [ ! -z "$GRAFANA_USER" ] && [ ! -z "$GRAFANA_PASS" ]; then
-    echo -e "${GREEN}Grafana credentials: Username: $GRAFANA_USER / Password: $GRAFANA_PASS${NC}"
-fi
-
 # Victoria Metrics
 start_port_forward $OBSERVABILITY_NAMESPACE "vmsingle-victoria-metrics-single-server" 8428 8428 "Victoria Metrics"
 
@@ -168,8 +157,6 @@ start_port_forward $OBSERVABILITY_NAMESPACE "vmalert-victoria-metrics-alert-serv
 # Alertmanager
 start_port_forward $OBSERVABILITY_NAMESPACE "alertmanager" 9093 9093 "Alertmanager"
 
-# Loki (if available)
-start_port_forward $OBSERVABILITY_NAMESPACE "loki" 3100 3100 "Loki"
 
 # Port forward useless-box services for each customer namespace
 echo -e "${BLUE}===========================================${NC}"
@@ -230,7 +217,6 @@ done
 echo -e "${BLUE}===========================================${NC}"
 echo -e "${GREEN}Port forwarding is active for the following services:${NC}"
 echo -e "${BLUE}===========================================${NC}"
-echo -e "${GREEN}Grafana:       http://localhost:3000${NC}"
 echo -e "${GREEN}VictoriaMetrics: http://localhost:8428${NC}"
 echo -e "${GREEN}VMAgent:       http://localhost:8429${NC}"
 echo -e "${GREEN}VMAlert:       http://localhost:8880${NC}"
