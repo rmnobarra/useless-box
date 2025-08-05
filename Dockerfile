@@ -2,8 +2,8 @@ FROM python:3.9-slim
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
-    gcc tk  tcl \
-    build-essential \
+    gcc tk tcl \
+    build-essential python3-dev libev-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
