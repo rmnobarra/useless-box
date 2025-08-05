@@ -177,7 +177,7 @@ echo -e "${GREEN}Forwarding useless-box applications...${NC}"
 echo -e "${BLUE}===========================================${NC}"
 
 # Set up separate ports for each useless-box instance
-TB_LOCAL_PORTS=(8000 8001 8002)
+TB_LOCAL_PORTS=(5000 5001 5002 5003 5004 5005)
 
 # Create a simple counter
 count=0
@@ -237,7 +237,7 @@ echo -e "${GREEN}VMAlert:       http://localhost:8880${NC}"
 echo -e "${GREEN}Alertmanager:  http://localhost:9093${NC}"
 echo -e "${GREEN}Loki:          http://localhost:3100 (if available)${NC}"
 
-local_port=8000
+local_port=5000
 for ns in "${CUSTOMER_NAMESPACES[@]}"; do
     echo -e "${GREEN}useless-box ($ns): http://localhost:$local_port${NC}"
     ((local_port++))

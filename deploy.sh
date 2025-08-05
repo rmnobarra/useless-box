@@ -113,7 +113,7 @@ done
 echo -e "${BLUE}Deploying useless-box application components to each namespace...${NC}"
 
 # Use raw GitHub content URLs for direct access to manifests
-REPO_URL="https://raw.githubusercontent.com/rmnobarra/useless-box/main/kubernetes/manifests"
+REPO_URL="https://raw.githubusercontent.com/rmnobarra/useless-box/main/kubernetes/useless-box"
 MANIFESTS=("deployment.yaml" "service.yaml")
 
 # Loop through each namespace and apply manifests
