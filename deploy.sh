@@ -82,18 +82,6 @@ helm upgrade --install grafana grafana/grafana \
   --namespace $OBSERVABILITY_NAMESPACE \
   --values kubernetes/helm-values/grafana-values.yaml
 
-#Deploy Loki
-echo -e "${BLUE}Deploying Loki...${NC}"
-helm upgrade --install loki grafana/loki \
-  --namespace $OBSERVABILITY_NAMESPACE \
-  --values kubernetes/helm-values/loki-values.yaml \
-  --timeout 5m
-
-echo -e "${BLUE}Deploying Promtail...${NC}"
-helm upgrade --install promtail grafana/promtail \
-  --namespace $OBSERVABILITY_NAMESPACE \
-  --values kubernetes/helm-values/promtail-values.yaml
-
 echo -e "${BLUE}Deploying workload...${NC}"
 echo -e "${BLUE}===========================================${NC}"
 echo -e "${BLUE}Creating customers namespaces...${NC}"
