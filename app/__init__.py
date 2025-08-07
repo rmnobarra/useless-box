@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_socketio import SocketIO
 from . import routes as app_routes
+from .metrics_middleware import MetricsMiddleware
 
 import os
 
@@ -10,6 +11,8 @@ socketio = SocketIO(cors_allowed_origins="*", message_queue=os.getenv("REDIS_URL
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'useless-secret-key'
+    app.wsgi_app = MetricsMiddleware(app.wsgi_app)
+
 
     socketio.init_app(app)
 
