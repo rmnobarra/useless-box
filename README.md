@@ -107,3 +107,5 @@ Remember to:
 - Use GitHub Secrets for DockerHub credentials
 - Keep dependencies updated
 
+## Metrics
+

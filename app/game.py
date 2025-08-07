@@ -2,6 +2,8 @@ import time
 import redis
 import os
 
+from .metrics import light_duration_histogram
+
 class Game:
     def __init__(self):
         self.redis = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
@@ -15,6 +17,7 @@ class Game:
             light_on_since = float(self.redis.get("light_on_since"))
             duration = now - light_on_since
             self._add_score(owner_id, duration)
+            light_duration_histogram.observe(duration)
             self.redis.set("light_on", "False")
             self.redis.delete("owner_id")
             self.redis.delete("light_on_since")
